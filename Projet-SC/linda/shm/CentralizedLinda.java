@@ -5,20 +5,28 @@ import linda.Linda;
 import linda.Tuple;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
 
 /** Shared memory implementation of Linda. */
 public class CentralizedLinda implements Linda {
 
     private  List<Tuple> tuplespace;
+    private Semaphore mutex;
+    //private Semaphore semTake, semRead;
+
 	
     public CentralizedLinda() {
-        List<Tuple> tuplespace = new ArrayList<Tuple>();
+        tuplespace = new ArrayList<Tuple>();
+        mutex = new Semaphore(1);
+        //semTake = new Semaphore(0);
+        //semRead = new Semaphore(1);
     }
 
     /** Adds a tuple t to the tuplespace. */
     @Override
     public void write (Tuple t){
         this.tuplespace.add(t);
+        System.out.println(tuplespace.get(0));
     }
 
     /** Returns a tuple matching the template and removes it from the tuplespace.
@@ -27,23 +35,24 @@ public class CentralizedLinda implements Linda {
      /**block implémentation des sémaphote */
     @Override
     public Tuple take(Tuple template){
-        int indice;
-        Tuple tupleout;
-        boolean sortie = false;
+     
+        Tuple tupleout = null;
 
-
-        while (sortie == false ){
-            indice = this.tuplespace.indexOf(template);
-            if (indice > -1) {
-                tupleout = this.tuplespace.get(i);
-                this.tuplespace.remove(this.tuplespace.get(indice));
-                sortie = true;
+               
+        {try {
+            
+            
+            while(tupleout == null){
+                this.mutex.acquire();
+                tupleout = tryTake(template);
+                this.mutex.release();
             }
-            else {
-        /**block implémentation des sémaphote */
-            }
+            
+        } catch (InterruptedException e){
+            System.out.println("Interrupted exception dans le take");
         }
 
+        }
         return tupleout;
     }
 
@@ -51,21 +60,21 @@ public class CentralizedLinda implements Linda {
      * Blocks if no corresponding tuple is found. */
     @Override
     public Tuple read(Tuple template){
-        int indice = 0;
-        boolean sortie = false;
-
-
-        while (sortie == false ){
-            indice = this.tuplespace.indexOf(template);
-            if (indice > -1) {
-                sortie = true;
+        Tuple tupleout = null;
+        
+        try {
+            
+            while (tupleout == null)
+            {
+                this.mutex.acquire();
+                tupleout = tryRead(template);
+                this.mutex.release();
             }
-            else {
-        /**block implémentation des sémaphote */
-            }
+            
+        } catch (InterruptedException e){
+            System.out.println("Interrupted exception dans le read");
         }
-
-        return this.tuplespace.get(indice);
+        return tupleout;
     }
 
 
@@ -73,32 +82,28 @@ public class CentralizedLinda implements Linda {
      * Returns null if none found. */
     @Override
     public Tuple tryTake(Tuple template){
-        Tuple tupleout;
-        for ( int i = 0; i < this.tuplespace.size(); i++){
-            if (this.tuplespace.get(i).matches(template)) {
-                tupleout = this.tuplespace.get(i);
-                this.tuplespace.remove(this.tuplespace.get(i));
-                return tupleout;
-            }
-            else {
-                return null;
-            }
+        int indice = 0;
+        Tuple tupleout = null;
+        indice = this.tuplespace.indexOf(template);
+        
+        if (indice != -1) {
+            tupleout = this.tuplespace.get(indice).deepclone();
+            this.tuplespace.remove(this.tuplespace.get(indice));
         }
+        return tupleout;
     }
 
     /** Returns a tuple matching the template and leaves it in the tuplespace.
      * Returns null if none found. */
     @Override
     public Tuple tryRead(Tuple template){
-        Tuple tupleout;
-        for ( int i = 0; i < this.tuplespace.size(); i++){
-            if (this.tuplespace.get(i).matches(template)) {
-                return this.tuplespace.get(i);
-            }
-            else {
-                return null;
-            }
+        int indice = 0;
+        Tuple tupleout = null;
+        indice = this.tuplespace.indexOf(template);
+        if (indice != -1) {
+            tupleout = this.tuplespace.get(indice).deepclone();
         }
+        return tupleout;
     }
 
     /** Returns all the tuples matching the template and removes them from the tuplespace.
@@ -108,18 +113,14 @@ public class CentralizedLinda implements Linda {
      */
     @Override
     public Collection<Tuple> takeAll(Tuple template){
-        Collection<Tuple> liste = new Collection<Tuple>();
+        Collection<Tuple> liste = new ArrayList<Tuple>();
         for ( int i = 0; i < this.tuplespace.size(); i++){
             if (this.tuplespace.get(i).matches(template)) {
-                liste.add(this.tuplespace.get(i));
+                liste.add(this.tuplespace.get(i).deepclone());
                 this.tuplespace.remove(this.tuplespace.get(i));
             }
-            else {
-                return null;
-            }
-            return liste;
         }
-
+        return liste;
     }
 
 
@@ -130,16 +131,13 @@ public class CentralizedLinda implements Linda {
      */
     @Override
     public Collection<Tuple> readAll(Tuple template){
-        ArrayList<Tuple> liste = new ArrayList<Tuple>();
+        Collection<Tuple> liste = new ArrayList<Tuple>();
         for ( int i = 0; i < this.tuplespace.size(); i++){
             if (this.tuplespace.get(i).matches(template)) {
                 liste.add(this.tuplespace.get(i));
             }
-            else {
-                return null;
-            }
-            return (Collection<Tuple>)liste;
         }
+        return liste;
     }
 
 
@@ -161,6 +159,7 @@ public class CentralizedLinda implements Linda {
      */
     @Override
     public void eventRegister(eventMode mode, eventTiming timing, Tuple template, Callback callback){
+
     }
 
     /** To debug, prints any information it wants (e.g. the tuples in tuplespace or the registered callbacks), prefixed by <code>prefix</code. */

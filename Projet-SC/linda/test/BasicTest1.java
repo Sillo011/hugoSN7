@@ -53,4 +53,6 @@ public class BasicTest1 {
         }.start();
                 
     }
+
+    private static final long serialVersionUID = 1L;
 }

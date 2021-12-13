@@ -13,8 +13,6 @@ import java.util.StringTokenizer;
  */
 public class Tuple extends LinkedList<Serializable> implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     /** Creates a new tuple.
      * Example :
      * new Tuple(4, 5, "foo", true)  -> [ 4 5 "foo" true ]
