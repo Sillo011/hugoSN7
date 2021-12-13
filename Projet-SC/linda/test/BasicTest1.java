@@ -1,5 +1,7 @@
 package linda.test;
 
+import java.nio.file.WatchService;
+
 import linda.*;
 
 public class BasicTest1 {
@@ -17,6 +19,7 @@ public class BasicTest1 {
                     e.printStackTrace();
                 }
                 Tuple motif = new Tuple(Integer.class, String.class);
+                //Tuple motif = new Tuple(4, 5);
                 Tuple res = linda.take(motif);
                 System.out.println("(1) Resultat:" + res);
                 linda.debug("(1)");

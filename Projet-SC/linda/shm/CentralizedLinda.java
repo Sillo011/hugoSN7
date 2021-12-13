@@ -26,7 +26,9 @@ public class CentralizedLinda implements Linda {
     @Override
     public void write (Tuple t){
         this.tuplespace.add(t);
-        System.out.println(tuplespace.get(0));
+        for (int i = 0; i < this.tuplespace.size(); i++){
+            System.out.println(tuplespace.get(i));
+        }
     }
 
     /** Returns a tuple matching the template and removes it from the tuplespace.
@@ -43,6 +45,7 @@ public class CentralizedLinda implements Linda {
             
             
             while(tupleout == null){
+                //System.out.println("je suis dans semaphore de take");
                 this.mutex.acquire();
                 tupleout = tryTake(template);
                 this.mutex.release();
@@ -66,6 +69,7 @@ public class CentralizedLinda implements Linda {
             
             while (tupleout == null)
             {
+                //System.out.println("je suis dans semaphore de read");
                 this.mutex.acquire();
                 tupleout = tryRead(template);
                 this.mutex.release();
@@ -82,13 +86,12 @@ public class CentralizedLinda implements Linda {
      * Returns null if none found. */
     @Override
     public Tuple tryTake(Tuple template){
-        int indice = 0;
         Tuple tupleout = null;
-        indice = this.tuplespace.indexOf(template);
-        
-        if (indice != -1) {
-            tupleout = this.tuplespace.get(indice).deepclone();
-            this.tuplespace.remove(this.tuplespace.get(indice));
+        for ( int i = 0; i < this.tuplespace.size(); i++){
+            if (this.tuplespace.get(i).matches(template)) {
+                tupleout = this.tuplespace.get(i);
+                this.tuplespace.remove(this.tuplespace.get(i));
+            }
         }
         return tupleout;
     }
@@ -97,11 +100,11 @@ public class CentralizedLinda implements Linda {
      * Returns null if none found. */
     @Override
     public Tuple tryRead(Tuple template){
-        int indice = 0;
         Tuple tupleout = null;
-        indice = this.tuplespace.indexOf(template);
-        if (indice != -1) {
-            tupleout = this.tuplespace.get(indice).deepclone();
+        for ( int i = 0; i < this.tuplespace.size(); i++){
+            if (this.tuplespace.get(i).matches(template)) {
+                tupleout = this.tuplespace.get(i);
+            }
         }
         return tupleout;
     }
